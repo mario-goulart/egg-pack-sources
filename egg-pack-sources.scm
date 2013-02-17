@@ -82,7 +82,8 @@
     (fprintf port "\n<options>:\n")
     (fprintf port "  --output-dir=<outdir>          directory where to write egg sources (default: $PWD)\n")
     (fprintf port "  --chicken-install=<path>       path to chicken-install (default: get from $PATH)\n")
-    (fprintf port "  --chicken-install-args=<args>  arguments for chicken-install (default: empty)\n")))
+    (fprintf port "  --chicken-install-args=<args>  arguments for chicken-install (default: empty)\n"))
+  (when exit-code (exit exit-code)))
 
 
 (let* ((args (command-line-arguments))
