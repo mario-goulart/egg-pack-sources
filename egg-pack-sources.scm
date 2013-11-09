@@ -3,6 +3,8 @@
 (import scheme chicken)
 (use srfi-1 srfi-13 files posix utils extras irregex data-structures setup-api)
 
+(include "version.scm")
+
 (define chicken-install
   (make-parameter "chicken-install"))
 
@@ -129,6 +131,7 @@
     (fprintf port #<#EOF
 Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
        #this --help | -help | -h
+       #this --version
 
 <options>:
 
@@ -148,6 +151,9 @@ Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
 --verbose
   show verbose messages
 
+--version
+  show version and exit
+
 EOF
 )
     (when exit-code (exit exit-code))))
@@ -161,6 +167,10 @@ EOF
             (member "-help" args)
             (member "--help" args))
     (usage 0))
+
+  (when (member "--version" args)
+    (print egg-pack-sources-version)
+    (exit 0))
 
   (when (null? non-option-args)
     (usage 1))

@@ -1,7 +1,9 @@
 ;; -*- scheme -*-
+(include "version.scm")
+
 (compile -d0 -O3 egg-pack-sources.scm)
 
 (install-program
  'egg-pack-sources
  '("egg-pack-sources")
- '((version "0.1")))
+ `((version ,egg-pack-sources-version)))
