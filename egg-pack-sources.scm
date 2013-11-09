@@ -35,17 +35,21 @@
          (append (deps 'depends)
                  (deps 'needs)))))
 
-(define (egg-pack-sources egg)
-  (fetch-egg egg)
-  (installer egg)
-  (let ((deps (egg-dependencies (make-pathname egg egg "meta"))))
-    (for-each (lambda (dep)
-                (let ((dep (symbol->string dep)))
-                  (unless (directory? dep)
-                    (egg-pack-sources dep)
-                    (installer egg))))
-              deps))
-  (write-installer!))
+(define (egg-pack-sources egg:version)
+  (let* ((egg-tokens (string-split egg:version ":"))
+         (egg (car egg-tokens))
+         (version (and (not (null? (cdr egg-tokens)))
+                       (cadr egg-tokens))))
+    (fetch-egg egg:version)
+    (installer egg)
+    (let ((deps (egg-dependencies (make-pathname egg egg "meta"))))
+      (for-each (lambda (dep)
+                  (let ((dep (symbol->string dep)))
+                    (unless (directory? dep)
+                      (egg-pack-sources dep)
+                      (installer egg))))
+                deps))
+    (write-installer!)))
 
 (define (write-installer!)
   (with-output-to-file installer-script
@@ -110,8 +114,21 @@
     (create-directory outdir 'with-parents)
     (change-directory outdir)
 
-    (for-each (lambda (egg)
-                (egg-pack-sources egg))
-              non-option-args)))
+    (let* ((eggs non-option-args)
+           (eggs-with-version
+            (filter (lambda (egg)
+                      (string-index egg #\:))
+                    eggs))
+           ;; prioritize packing versioned eggs -- the requested
+           ;; versions won't be clobbered in case those eggs are
+           ;; dependencies of other eggs
+           (eggs/with-version-first
+            (append eggs-with-version
+                    (remove (lambda (egg)
+                              (string-index egg #\:))
+                            eggs))))
+      (for-each (lambda (egg)
+                  (egg-pack-sources egg))
+                eggs/with-version-first))))
 
 ) ;; end module
