@@ -1,3 +1,4 @@
+;; -*- scheme -*-
 (compile -d0 -O3 egg-pack-sources.scm)
 
 (install-program

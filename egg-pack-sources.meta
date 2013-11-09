@@ -1,3 +1,4 @@
+;; -*- scheme -*-
 ((synopsis "A tool to fetch eggs and dependencies sources")
  (author "Mario Domenech Goulart")
  (category tools)
