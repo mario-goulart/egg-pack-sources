@@ -87,7 +87,10 @@
                                version)
                       (exit 1))
                     (unless (directory? dep)
-                      (egg-pack-sources dep)
+                      (let ((dep-version (eggs/versions dep)))
+                        (egg-pack-sources (if dep-version
+                                              (sprintf "~a:~a" dep dep-version)
+                                              dep)))
                       (installer egg))))
                 deps))
     (write-installer!)))
