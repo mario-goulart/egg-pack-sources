@@ -104,14 +104,26 @@
 (define (usage #!optional exit-code)
   (let ((port (if (and exit-code (not (zero? exit-code)))
                   (current-error-port)
-                  (current-output-port))))
-    (fprintf port "Usage: ~a [ <options> ] <egg1> [ <egg2> ... ]\n"
-             (pathname-strip-directory (program-name)))
-    (fprintf port "\n<options>:\n")
-    (fprintf port "  --output-dir=<outdir>          directory where to write egg sources (default: $PWD)\n")
-    (fprintf port "  --chicken-install=<path>       path to chicken-install (default: get from $PATH)\n")
-    (fprintf port "  --chicken-install-args=<args>  arguments for chicken-install (default: empty)\n"))
-  (when exit-code (exit exit-code)))
+                  (current-output-port)))
+        (this (pathname-strip-directory (program-name))))
+    (fprintf port #<#EOF
+Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
+       #this --help | -help | -h
+
+<options>:
+
+--output-dir=<outdir>
+  directory where to write egg sources (default: $PWD)
+
+--chicken-install=<path>
+  path to chicken-install (default: get from $PATH)
+
+--chicken-install-args=<args>
+  arguments for chicken-install (default: empty)
+
+EOF
+)
+    (when exit-code (exit exit-code))))
 
 
 (let* ((args (command-line-arguments))
