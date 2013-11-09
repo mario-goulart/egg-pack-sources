@@ -9,11 +9,17 @@
 (define force-versions?
   (make-parameter #f))
 
+(define verbose?
+  (make-parameter #f))
+
 ;; for installing eggs from the installer script
 (define chicken-install-args
   (make-parameter ""))
 
 (define installer-script "install.sh")
+
+(define (info fmt . args)
+  (apply printf (cons (string-append fmt "\n") args)))
 
 (define installer
   (let ((eggs '()))
@@ -34,7 +40,13 @@
              (set! e/v (alist-update! (car args) (cadr args) e/v)))))))
 
 (define (fetch-egg egg)
-  (system* (sprintf "~a -r ~a" (chicken-install) egg)))
+  (info "Fetching ~a" egg)
+  (system* (sprintf "~a -r ~a~a"
+                    (chicken-install)
+                    egg
+                    (if (verbose?)
+                        ""
+                        " >/dev/null 2>&1"))))
 
 (define (egg-dependencies meta-file)
   (let ((meta-data (with-input-from-file meta-file read)))
@@ -129,6 +141,9 @@ Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
   fetch versions specified on the command the line, even if they don't
   satisfy the requirements by other eggs.
 
+--verbose
+  show verbose messages
+
 EOF
 )
     (when exit-code (exit exit-code))))
@@ -154,6 +169,8 @@ EOF
 
   (force-versions? (and (member "--force-versions" args) #t))
 
+  (verbose? (and (member "--verbose" args) #t))
+
   (let ((outdir (or (cmd-line-arg '--output-dir args)
                     (current-directory))))
 
@@ -178,6 +195,7 @@ EOF
                 eggs-with-version)
       (for-each (lambda (egg)
                   (egg-pack-sources egg))
-                eggs/with-version-first))))
+                eggs/with-version-first)
+      (info "Done. Eggs have been fetched and written to '~a'." outdir))))
 
 ) ;; end module
