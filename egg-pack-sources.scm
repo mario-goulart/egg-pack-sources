@@ -6,6 +6,9 @@
 (define chicken-install
   (make-parameter "chicken-install"))
 
+(define force-versions?
+  (make-parameter #f))
+
 ;; for installing eggs from the installer script
 (define chicken-install-args
   (make-parameter ""))
@@ -59,6 +62,7 @@
                          (requested-version (eggs/versions dep)))
                     (when (and version
                                requested-version
+                               (not (force-versions?))
                                (not (version>=? requested-version version)))
                       (fprintf (current-error-port)
                                (string-append
@@ -121,6 +125,10 @@ Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
 --chicken-install-args=<args>
   arguments for chicken-install (default: empty)
 
+--force-versions
+  fetch versions specified on the command the line, even if they don't
+  satisfy the requirements by other eggs.
+
 EOF
 )
     (when exit-code (exit exit-code))))
@@ -143,6 +151,8 @@ EOF
 
   (chicken-install-args (or (cmd-line-arg '--chicken-install-args args)
                             (chicken-install-args)))
+
+  (force-versions? (and (member "--force-versions" args) #t))
 
   (let ((outdir (or (cmd-line-arg '--output-dir args)
                     (current-directory))))
