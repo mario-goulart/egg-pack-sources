@@ -64,37 +64,38 @@
          (egg (car egg-tokens))
          (version (and (not (null? (cdr egg-tokens)))
                        (cadr egg-tokens))))
-    (fetch-egg egg:version)
-    (installer egg)
-    (let ((deps (egg-dependencies (make-pathname egg egg "meta"))))
-      (for-each (lambda (dep)
-                  (let* ((version (and (pair? dep)
-                                       (cadr dep)))
-                         (dep (->string (if (pair? dep)
-                                            (car dep)
-                                            dep)))
-                         (requested-version (eggs/versions dep)))
-                    (when (and version
-                               requested-version
-                               (not (force-versions?))
-                               (not (version>=? requested-version version)))
-                      (fprintf (current-error-port)
-                               (string-append
-                                "You requested version ~a for ~a, but ~a depends on ~a version ~a. "
-                                "Aborting.\n")
-                               requested-version
-                               dep
-                               egg
-                               dep
-                               version)
-                      (exit 1))
-                    (unless (directory? dep)
-                      (let ((dep-version (eggs/versions dep)))
-                        (egg-pack-sources (if dep-version
-                                              (sprintf "~a:~a" dep dep-version)
+    (unless (file-exists? egg)
+      (fetch-egg egg:version)
+      (installer egg)
+      (let ((deps (egg-dependencies (make-pathname egg egg "meta"))))
+        (for-each (lambda (dep)
+                    (let* ((version (and (pair? dep)
+                                         (cadr dep)))
+                           (dep (->string (if (pair? dep)
+                                              (car dep)
                                               dep)))
-                      (installer egg))))
-                deps))
+                           (requested-version (eggs/versions dep)))
+                      (when (and version
+                                 requested-version
+                                 (not (force-versions?))
+                                 (not (version>=? requested-version version)))
+                        (fprintf (current-error-port)
+                                 (string-append
+                                  "You requested version ~a for ~a, but ~a depends on ~a version ~a. "
+                                  "Aborting.\n")
+                                 requested-version
+                                 dep
+                                 egg
+                                 dep
+                                 version)
+                        (exit 1))
+                      (unless (file-exists? dep)
+                        (let ((dep-version (eggs/versions dep)))
+                          (egg-pack-sources (if dep-version
+                                                (sprintf "~a:~a" dep dep-version)
+                                                dep)))
+                        (installer egg))))
+                  deps)))
     (write-installer!)))
 
 (define (write-installer!)
