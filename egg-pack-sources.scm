@@ -78,11 +78,12 @@
                                (not (version>=? requested-version version)))
                       (fprintf (current-error-port)
                                (string-append
-                                "You requested version ~a for ~a, but ~a depends on version ~a. "
+                                "You requested version ~a for ~a, but ~a depends on ~a version ~a. "
                                 "Aborting.\n")
                                requested-version
                                dep
                                egg
+                               dep
                                version)
                       (exit 1))
                     (unless (directory? dep)
