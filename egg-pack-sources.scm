@@ -1,7 +1,7 @@
 (module egg-pack-sources ()
 
 (import scheme chicken)
-(use srfi-1 srfi-13 files posix utils extras irregex data-structures)
+(use srfi-1 srfi-13 files posix utils extras irregex data-structures setup-api)
 
 (define chicken-install
   (make-parameter "chicken-install"))
@@ -19,6 +19,17 @@
           (set! eggs (cons egg eggs))
           (reverse (delete-duplicates eggs equal?))))))
 
+(define eggs/versions
+  ;; Eggs with versions as specified by user
+  (let ((e/v '()))
+    (lambda args
+      (cond ((null? args)
+             e/v)
+            ((null? (cdr args))
+             (alist-ref (car args) e/v equal?))
+            (else
+             (set! e/v (alist-update! (car args) (cadr args) e/v)))))))
+
 (define (fetch-egg egg)
   (system* (sprintf "~a -r ~a" (chicken-install) egg)))
 
@@ -28,12 +39,8 @@
       (or (and-let* ((d (assq key meta-data)))
             (cdr d))
           '()))
-    (map (lambda (dep)
-           (if (pair? dep)
-               (car dep)
-               dep))
-         (append (deps 'depends)
-                 (deps 'needs)))))
+    (append (deps 'depends)
+            (deps 'needs))))
 
 (define (egg-pack-sources egg:version)
   (let* ((egg-tokens (string-split egg:version ":"))
@@ -44,7 +51,24 @@
     (installer egg)
     (let ((deps (egg-dependencies (make-pathname egg egg "meta"))))
       (for-each (lambda (dep)
-                  (let ((dep (symbol->string dep)))
+                  (let* ((version (and (pair? dep)
+                                       (cadr dep)))
+                         (dep (->string (if (pair? dep)
+                                            (car dep)
+                                            dep)))
+                         (requested-version (eggs/versions dep)))
+                    (when (and version
+                               requested-version
+                               (not (version>=? requested-version version)))
+                      (fprintf (current-error-port)
+                               (string-append
+                                "You requested version ~a for ~a, but ~a depends on version ~a. "
+                                "Aborting.\n")
+                               requested-version
+                               dep
+                               egg
+                               version)
+                      (exit 1))
                     (unless (directory? dep)
                       (egg-pack-sources dep)
                       (installer egg))))
@@ -127,6 +151,9 @@
                     (remove (lambda (egg)
                               (string-index egg #\:))
                             eggs))))
+      (for-each (lambda (egg)
+                  (apply eggs/versions (string-split egg ":")))
+                eggs-with-version)
       (for-each (lambda (egg)
                   (egg-pack-sources egg))
                 eggs/with-version-first))))
