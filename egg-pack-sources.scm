@@ -18,7 +18,8 @@
 (define chicken-install-args
   (make-parameter ""))
 
-(define installer-script "install.sh")
+(define installer-script
+  (make-parameter "install.sh"))
 
 (define (info fmt . args)
   (apply printf (cons (string-append fmt "\n") args)))
@@ -99,7 +100,7 @@
     (write-installer!)))
 
 (define (write-installer!)
-  (with-output-to-file installer-script
+  (with-output-to-file (installer-script)
     (lambda ()
       (print "#!/bin/sh")
       (for-each (lambda (egg)
@@ -108,7 +109,7 @@
                           (chicken-install)
                           (chicken-install-args)))
                 (installer))))
-  (change-file-mode installer-script
+  (change-file-mode (installer-script)
                     (bitwise-ior perm/irwxu
                                  perm/ixgrp perm/irgrp
                                  perm/iroth perm/ixoth)))
@@ -149,6 +150,9 @@ Usage: #this [ <options> ] <egg1>[:<version>] [ <egg2>[:<version>] ... ]
   fetch versions specified on the command the line, even if they don't
   satisfy the requirements by other eggs.
 
+--installer-script=<filename>
+  filename to write to installer script to (default: install.sh)
+
 --verbose
   show verbose messages
 
@@ -181,6 +185,9 @@ EOF
 
   (chicken-install-args (or (cmd-line-arg '--chicken-install-args args)
                             (chicken-install-args)))
+
+  (installer-script (or (cmd-line-arg '--installer-script args)
+                        (installer-script)))
 
   (force-versions? (and (member "--force-versions" args) #t))
 
